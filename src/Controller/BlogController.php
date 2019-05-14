@@ -1,17 +1,19 @@
 <?php
 
 namespace App\Controller;
+
 use App\Entity\Article;
 use App\Entity\Category;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+
 class BlogController extends AbstractController
 {
     /**
      * Show all row from article's entity
      *
-     * @Route("/blog", name="index")
+     * @Route("/blog", name="blog_index")
      * @return Response A response instance
      */
     public function index(): Response
@@ -72,48 +74,32 @@ class BlogController extends AbstractController
             ]
         );
     }
+
     /**
-     * Getting a article with a formatted slug for title
-     *
-     * @param string $category The slugger
-     *
-     * @Route("/blog/category/{category}",
-     *     requirements={"category"="^[a-z0-9-]+$"},
-     *     defaults={"category" = null},
-     *     name="show_Category")
-     *  @return Response A response instance
-     */
-    public function showByCategory(?string $category) : Response
+     * @Route("/blog/category/{category}", name="show_category")
+     ** @return Response A response instance
+     **/
+    public function showByCategory ( string $category )
     {
-        if (!$category) {
-            throw $this
-                ->createNotFoundException('No slug has been sent to find an article in article\'s table.');
-        }
-
-        $category = preg_replace(
-            '/-/',
-            ' ', ucwords(trim(strip_tags($category)), "-")
-        );
-
-        $category = $this->getDoctrine()
+        $categoryName = $this->getDoctrine()
             ->getRepository(Category::class)
-            ->findOneBy(['name' => $category]);
+            ->findOneByName($category);
 
-        $articles = $this->getDoctrine()
-            ->getRepository(Article::class)
-            ->findBy(['category' => $category], array('id' => 'DESC'),3);
-
-        if (!$articles) {
+        if (!$categoryName) {
             throw $this->createNotFoundException(
-                'No article with title, found in article\'s table.'
+                'Category not found in category-s table'
             );
         }
+        $articles = $this->getDoctrine()
+            ->getRepository((Article::class))
+            ->findByCategory($categoryName,["id"=>"DESC",3]
+                );
 
         return $this->render(
-            'blog/category.html.twig',
+            'Blog/category.html.twig',
             [
-                'category' => $category,
-                'articles' => $articles,
+                'category' => $categoryName,
+                'articles' => $articles
             ]
         );
     }
